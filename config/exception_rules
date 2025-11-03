@@ -1,0 +1,11 @@
+# 例外规则配置 - 需要从WGS84转换的来源
+# 格式: 名称: 关键词1, 关键词2, 关键词3
+openstreetmap: openstreetmap.org, osm.org, openstreetmap
+mapbox: mapbox.com, mapbox.org
+carto: carto.com, cartocdn.com
+garmin_intl: garmin.com/, garmin.com/maps
+tomtom_intl: tomtom.com/, tomtom.com/maps
+traccar: traccar, traccar-server
+gps_tracker: gpstracker, gps tracker
+google_maps_intl: maps.google.com, google.com/maps
+here_maps: here.com, hereapi.com

@@ -6,8 +6,12 @@ services:
     environment:
       - LOG_LEVEL=INFO
       - CACHE_ENABLED=true
+      - CACHE_DIR=/tmp/cache
+      - TZ=Asia/Shanghai
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8280/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -20,9 +24,12 @@ services:
     networks:
       - traefik_default
     ports:
-      - "8280:8080"
-    # volumes:
-    #   - amap-cache:/tmp/cache
+      - "8280:8280"
+    volumes:
+      - ./amap-cache:/tmp/cache
+      - ./config:/app/config
+      # 条件挂载，如果文件存在才挂载
+      - ./geoip/GeoLite2-City.mmdb:/app/GeoLite2-City.mmdb:ro
 
 networks:
   traefik_default:

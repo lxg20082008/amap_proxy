@@ -1,0 +1,20 @@
+# Git
+.git
+.gitignore
+.github
+
+# Docker
+.dockerignore
+docker-compose.yaml
+
+# 缓存目录
+amap-cache/
+__pycache__/
+*.pyc
+
+# 本地GeoIP数据库
+geoip/
+
+# 其他文件
+*.md
+LICENSE
