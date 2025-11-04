@@ -21,7 +21,7 @@ RUN mkdir -p /tmp/cache && chown -R appuser:appgroup /tmp/cache
 RUN touch /app/GeoLite2-City.mmdb && chown appuser:appgroup /app/GeoLite2-City.mmdb
 
 # 验证安装（更新为实际使用的依赖）
-RUN python -c "import flask; import requests; import geoip2.database; print('✅ 所有依赖安装成功')"
+RUN python -c "import flask; import requests; import geoip2.database; import dotenv; print('✅ 所有依赖安装成功')"
 
 # 复制应用代码和配置
 COPY app.py .
@@ -34,6 +34,7 @@ RUN chown -R appuser:appgroup /app
 ENV CACHE_ENABLED=true
 ENV CACHE_DIR=/tmp/cache
 ENV LOG_LEVEL=INFO
+ENV GEOIP_ENABLED=true
 
 EXPOSE 8280
 

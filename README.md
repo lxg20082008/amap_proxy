@@ -13,11 +13,16 @@
 
 ### 在Linux系统直接运行
 
+推荐使用`.env`文件来管理环境变量，这样更安全且灵活。
+
 ```bash
+# (可选) 创建并编辑.env文件
+# echo "GEOIP_ENABLED=false" > .env
+
 # 安装依赖
 pip install -r requirements.txt
 
-# 运行应用
+# 运行应用 (会自动加载.env文件)
 python app.py
 ```
 
@@ -36,6 +41,7 @@ docker run -d -p 8280:8280 \
   -v ./amap-cache:/tmp/cache \
   -v ./config:/app/config \
   -e CACHE_ENABLED=true \
+  -e GEOIP_ENABLED=false \
   amap-tile-proxy:latest
 ```
 
@@ -47,6 +53,7 @@ docker run -d -p 8280:8280 \
   -v ./amap-cache:/tmp/cache \
   -v ./config:/app/config \
   -e CACHE_ENABLED=true \
+  -e GEOIP_ENABLED=false \
   imno9999/amap-tile-proxy:latest
 ```
 
@@ -62,6 +69,7 @@ services:
       - LOG_LEVEL=INFO
       - CACHE_ENABLED=true
       - CACHE_DIR=/tmp/cache
+      - GEOIP_ENABLED=false # 在这里禁用GeoIP
     ports:
       - "8280:8280"
     volumes:
@@ -90,6 +98,7 @@ curl http://localhost:8280/api/test-coord?lng=116.391265&lat=39.907339
 - `CACHE_ENABLED`: 是否启用缓存 (true/false)
 - `CACHE_DIR`: 缓存目录路径 (默认: /tmp/cache)
 - `LOG_LEVEL`: 日志级别 (INFO/DEBUG/ERROR)
+- `GEOIP_ENABLED`: 是否启用GeoIP地理位置判断 (true/false, 默认: true)
 
 ### 例外规则配置
 

@@ -10,6 +10,7 @@ services:
       - TZ=Asia/Shanghai
       - FLASK_ENV=production
       - PYTHONUNBUFFERED=1
+      - GEOIP_ENABLED=false
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8280/health"]
       interval: 30s
