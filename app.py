@@ -11,8 +11,8 @@ import geoip2.database
 import geoip2.errors
 from dotenv import load_dotenv
 
-# 加载 .env 文件中的环境变量
-load_dotenv()
+# 加载配置文件中的环境变量
+load_dotenv('config/settings.conf')
 
 app = Flask(__name__)
 # 获取环境变量中的日志级别，默认为INFO

@@ -26,7 +26,7 @@ RUN python -c "import flask; import requests; import geoip2.database; from doten
 # 复制应用代码和配置
 COPY app.py .
 COPY test_tile.html .
-COPY .env .
+COPY config/settings.conf ./config/
 COPY GeoLite2-City.mmdb .
 COPY config /app/config
 
