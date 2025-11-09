@@ -16,5 +16,6 @@ __pycache__/
 geoip/
 
 # 其他文件
-*.md
+README.md
 LICENSE
+*.md

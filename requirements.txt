@@ -1,6 +1,5 @@
 Flask==2.3.3
 requests==2.31.0
 geoip2==4.7.0
-pathlib==1.0.1
 Werkzeug==2.3.7
 python-dotenv==0.21.0

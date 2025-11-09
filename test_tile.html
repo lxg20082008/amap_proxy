@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高德地图瓦片代理测试</title>
+    <link rel="stylesheet" href="https://openlayers.org/en/v6.15.1/css/ol.css" type="text/css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        .status-panel {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .status-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status-item.success {
+            border-left-color: #28a745;
+        }
+        .status-item.error {
+            border-left-color: #dc3545;
+        }
+        .status-item.warning {
+            border-left-color: #ffc107;
+        }
+        .status-label {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+        .status-value {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        .test-section {
+            padding: 30px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .test-section:last-child {
+            border-bottom: none;
+        }
+        .section-title {
+            font-size: 1.5em;
+            color: #343a40;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 25px;
+            background: #007bff;
+            margin-right: 15px;
+            border-radius: 2px;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .input-group input {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #1e7e34;
+            transform: translateY(-1px);
+        }
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        .btn-info:hover {
+            background: #117a8b;
+            transform: translateY(-1px);
+        }
+        .result-panel {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            min-height: 60px;
+        }
+        .tile-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .tile-container {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        .tile-container h4 {
+            margin: 0 0 10px 0;
+            color: #495057;
+            font-size: 1.1em;
+        }
+        .tile-image {
+            width: 100%;
+            height: 200px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .tile-image img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+        }
+        .log-output {
+            background: #2d3748;
+            color: #e2e8f0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            padding: 15px;
+            border-radius: 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+        .log-entry.success {
+            color: #68d391;
+        }
+        .log-entry.error {
+            color: #fc8181;
+        }
+        .log-entry.info {
+            color: #63b3ed;
+        }
+        .coordinate-display {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 6px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .hidden {
+            display: none;
+        }
+        .map {
+            height: 400px;
+            width: 100%;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .map-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>高德地图瓦片代理测试系统</h1>
+            <p>GeoIP智能判断 + 坐标系统转换测试</p>
+        </div>
+
+        <div class="status-panel">
+            <div class="section-title">服务状态监控</div>
+            <div class="status-grid" id="statusGrid">
+                <div class="status-item">
+                    <div class="status-label">服务状态</div>
+                    <div class="status-value" id="serviceStatus">检测中...</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">GeoIP数据库</div>
+                    <div class="status-value" id="geoipStatus">检测中...</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">坐标策略</div>
+                    <div class="status-value" id="coordinateStrategy">检测中...</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">缓存状态</div>
+                    <div class="status-value" id="cacheStatus">检测中...</div>
+                </div>
+            </div>
+            <button class="btn btn-info" onclick="checkServiceStatus()">刷新状态</button>
+        </div>
+
+        <div class="test-section">
+            <div class="section-title">大地图显示</div>
+            <p>完整的大地图瓦片显示，使用OpenLayers库</p>
+            
+            <div class="map-container">
+                <div id="map" class="map"></div>
+                <div style="margin-top: 15px; text-align: center;">
+                    <button class="btn btn-primary" onclick="resetMapView()">重置视图</button>
+                    <select id="mapStyleSelector" class="btn" style="padding: 12px; margin: 0 10px;" onchange="changeMapStyle()">
+                        <option value="8">标准矢量地图</option>
+                        <option value="6">卫星影像地图</option>
+                        <option value="7">矢量大字版</option>
+                        <option value="9">矢量大字版(无图标)</option>
+                    </select>
+                    <button class="btn btn-info" onclick="toggleMapLayer()">切换代理/直连</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="section-title">基础瓦片测试</div>
+            <p>测试代理服务是否能正常获取高德地图瓦片</p>
+            
+            <div class="input-group">
+                <input type="number" id="baseX" placeholder="X坐标" value="1050">
+                <input type="number" id="baseY" placeholder="Y坐标" value="515">
+                <input type="number" id="baseZ" placeholder="缩放级别" value="11" min="1" max="18">
+                <button class="btn btn-primary" onclick="testBaseTile()">测试基础瓦片</button>
+            </div>
+
+            <div class="tile-grid" id="baseTileResult"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="section-title">城市瓦片测试</div>
+            <p>测试不同城市的瓦片获取和坐标转换效果</p>
+            
+            <div class="input-group">
+                <select id="citySelect" class="btn" style="padding: 12px;">
+                    <option value="beijing">北京</option>
+                    <option value="shanghai">上海</option>
+                    <option value="guangzhou">广州</option>
+                    <option value="shenzhen">深圳</option>
+                    <option value="chengdu">成都</option>
+                    <option value="hangzhou">杭州</option>
+                </select>
+                <input type="number" id="cityZ" placeholder="缩放级别" value="12" min="1" max="18">
+                <button class="btn btn-success" onclick="testCityTiles()">测试城市瓦片</button>
+            </div>
+
+            <div class="tile-grid" id="cityTileResult"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="section-title">瓦片地理范围分析工具</div>
+            <p>计算当前缩放级别下瓦片的实际覆盖范围和坐标偏移影响</p>
+            
+            <div class="input-group">
+                <input type="number" id="analysisLng" placeholder="经度" value="116.397428">
+                <input type="number" id="analysisLat" placeholder="纬度" value="39.90923">
+                <input type="number" id="analysisZ" placeholder="缩放级别" value="15" min="1" max="18">
+                <button class="btn btn-info" onclick="analyzeTileCoverage()">分析瓦片覆盖</button>
+            </div>
+
+            <div class="result-panel" id="coverageResult">
+                <p>输入坐标后点击分析按钮查看瓦片覆盖范围</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="section-title">坐标转换测试</div>
+            <p>测试GCJ02和WGS84坐标系统的转换效果</p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <h4>GCJ02坐标测试</h4>
+                    <div class="input-group">
+                        <input type="number" id="gcjLng" placeholder="经度" value="116.397428">
+                        <input type="number" id="gcjLat" placeholder="纬度" value="39.90923">
+                        <input type="number" id="gcjZ" placeholder="缩放级别" value="15" min="1" max="18">
+                        <button class="btn btn-primary" onclick="testGCJ02Tile()">加载GCJ02瓦片</button>
+                    </div>
+                    <div class="coordinate-display">
+                        <strong>GCJ02坐标：</strong><br>
+                        经度: <span id="gcjCoordLng">116.397428</span>, 纬度: <span id="gcjCoordLat">39.90923</span>
+                    </div>
+                    <div class="tile-container">
+                        <div class="tile-image" id="gcjTileResult">点击按钮加载瓦片</div>
+                    </div>
+                </div>
+
+                <div>
+                    <h4>WGS84坐标测试</h4>
+                    <div class="input-group">
+                        <input type="number" id="wgsLng" placeholder="经度" value="116.39135">
+                        <input type="number" id="wgsLat" placeholder="纬度" value="39.90738">
+                        <input type="number" id="wgsZ" placeholder="缩放级别" value="15" min="1" max="18">
+                        <button class="btn btn-success" onclick="testWGS84Tile()">加载WGS84瓦片</button>
+                    </div>
+                    <div class="coordinate-display">
+                        <strong>WGS84坐标：</strong><br>
+                        经度: <span id="wgsCoordLng">116.39135</span>, 纬度: <span id="wgsCoordLat">39.90738</span>
+                    </div>
+                    <div class="tile-container">
+                        <div class="tile-image" id="wgsTileResult">点击按钮加载瓦片</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="section-title">高缩放级别坐标差异测试</div>
+            <p>在缩放级别17-18下测试WGS84和GCJ02坐标的明显差异</p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <div>
+                    <h4>高精度测试 - 缩放级别17</h4>
+                    <div class="input-group">
+                        <input type="number" id="highZ17Lng" placeholder="经度" value="116.397428" style="flex: 2;">
+                        <button class="btn btn-primary" onclick="testHighZoom(17)">测试Z17差异</button>
+                    </div>
+                    <div id="highZ17Result" style="margin-top: 10px;"></div>
+                </div>
+                
+                <div>
+                    <h4>高精度测试 - 缩放级别18</h4>
+                    <div class="input-group">
+                        <input type="number" id="highZ18Lng" placeholder="经度" value="116.397428" style="flex: 2;">
+                        <button class="btn btn-success" onclick="testHighZoom(18)">测试Z18差异</button>
+                    </div>
+                    <div id="highZ18Result" style="margin-top: 10px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="section-title">坐标纠偏验证工具</div>
+            <p>验证坐标转换的准确性，对比直接坐标和转换后坐标的瓦片差异</p>
+            
+            <div class="input-group">
+                <input type="number" id="verifyLng" placeholder="经度" value="116.397428">
+                <input type="number" id="verifyLat" placeholder="纬度" value="39.90923">
+                <input type="number" id="verifyZ" placeholder="缩放级别" value="16" min="1" max="18">
+                <button class="btn btn-info" onclick="verifyCoordinate()">验证坐标纠偏</button>
+            </div>
+
+            <div class="result-panel" id="verifyResult">
+                <p>输入坐标后点击验证按钮进行坐标纠偏测试</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="section-title">坐标系转换可视化</div>
+            <p>实时显示WGS84和GCJ02坐标之间的转换关系和偏移量</p>
+            
+            <div class="input-group">
+                <input type="number" id="visLng" placeholder="输入经度" value="116.397428">
+                <input type="number" id="visLat" placeholder="输入纬度" value="39.90923">
+                <select id="visCoordType">
+                    <option value="gcj02">输入为GCJ02坐标</option>
+                    <option value="wgs84">输入为WGS84坐标</option>
+                </select>
+                <button class="btn btn-info" onclick="visualizeCoordinateTransform()">可视化转换</button>
+            </div>
+
+            <div class="result-panel" id="visualizationResult">
+                <p>输入坐标后点击可视化按钮查看转换关系</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="section-title">实时日志</div>
+            <div class="log-output" id="logOutput">
+                <div class="log-entry info">系统初始化完成，等待测试...</div>
+            </div>
+            <button class="btn btn-primary" onclick="clearLog()">清空日志</button>
+        </div>
+    </div>
+
+    <script src="https://openlayers.org/en/v6.15.1/build/ol.js"></script>
+    <script>
+        // 全局地图变量
+        let map;
+        let currentLayer = 'amap';
+        let currentStyle = 8; // 默认使用标准矢量地图
+        
+        // 获取地图URL
+        function getMapUrl(layer, style) {
+            if (layer === 'amap') {
+                return `/amap/{z}/{x}/{y}.jpg?style=${style}`;
+            } else {
+                return `/tile?x={x}&y={y}&z={z}&style=${style}`;
+            }
+        }
+
+        // 初始化大地图
+        function initMainMap() {
+            try {
+                // 创建瓦片图层
+                const tileLayer = new ol.layer.Tile({
+                    source: new ol.source.XYZ({
+                        url: getMapUrl(currentLayer, currentStyle),
+                        crossOrigin: 'anonymous'
+                    })
+                });
+
+                // 创建地图
+                map = new ol.Map({
+                    target: 'map',
+                    layers: [tileLayer],
+                    view: new ol.View({
+                        center: ol.proj.fromLonLat([116.397428, 39.90923]),
+                        zoom: 15,
+                        maxZoom: 18,
+                        minZoom: 1
+                    }),
+                    controls: ol.control.defaults({
+                        attribution: false,
+                        zoom: true,
+                        rotate: false
+                    }).extend([
+                        new ol.control.ScaleLine(),
+                        new ol.control.MousePosition({
+                            coordinateFormat: function(coord) {
+                                return ol.coordinate.format(coord, '经度: {x}, 纬度: {y}', 6);
+                            },
+                            projection: 'EPSG:4326',
+                            className: 'custom-mouse-position',
+                            target: document.getElementById('mouse-position')
+                        })
+                    ])
+                });
+
+                // 添加地图事件监听
+                map.on('moveend', function() {
+                    const view = map.getView();
+                    const center = ol.proj.toLonLat(view.getCenter());
+                    const zoom = view.getZoom();
+                    addLog(`地图移动 - 中心: ${center[0].toFixed(6)}, ${center[1].toFixed(6)}, 缩放: ${zoom.toFixed(2)}`, 'info');
+                });
+
+                addLog('大地图初始化成功', 'success');
+            } catch (error) {
+                addLog(`地图初始化失败: ${error.message}`, 'error');
+                document.getElementById('map').innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #dc3545;">地图加载失败，请检查代理服务</div>';
+            }
+        }
+
+        // 重置地图视图
+        function resetMapView() {
+            if (map) {
+                map.getView().animate({
+                    center: ol.proj.fromLonLat([116.397428, 39.90923]),
+                    zoom: 15,
+                    duration: 1000
+                });
+                addLog('地图视图已重置到北京天安门', 'info');
+            }
+        }
+
+        // 切换地图风格
+        function changeMapStyle() {
+            if (map) {
+                const styleSelector = document.getElementById('mapStyleSelector');
+                currentStyle = parseInt(styleSelector.value);
+                
+                const layers = map.getLayers();
+                const tileLayer = layers.getArray()[0];
+                
+                // 更新瓦片源URL
+                tileLayer.setSource(new ol.source.XYZ({
+                    url: getMapUrl(currentLayer, currentStyle),
+                    crossOrigin: 'anonymous'
+                }));
+                
+                const styleNames = {
+                    6: '卫星影像地图',
+                    7: '矢量大字版',
+                    8: '标准矢量地图',
+                    9: '矢量大字版(无图标)'
+                };
+                
+                addLog(`切换地图风格: ${styleNames[currentStyle]} (style=${currentStyle})`, 'info');
+            }
+        }
+
+        // 切换图层
+        function toggleMapLayer() {
+            if (map) {
+                const layers = map.getLayers();
+                const tileLayer = layers.getArray()[0];
+                
+                if (currentLayer === 'amap') {
+                    // 切换到代理图层
+                    tileLayer.setSource(new ol.source.XYZ({
+                        url: getMapUrl('proxy', currentStyle),
+                        crossOrigin: 'anonymous'
+                    }));
+                    currentLayer = 'proxy';
+                    addLog('切换到代理服务图层', 'info');
+                } else {
+                    // 切换回高德图层
+                    tileLayer.setSource(new ol.source.XYZ({
+                        url: getMapUrl('amap', currentStyle),
+                        crossOrigin: 'anonymous'
+                    }));
+                    currentLayer = 'amap';
+                    addLog('切换到高德地图图层', 'info');
+                }
+            }
+        }
+        // 城市坐标配置
+        const cityCoordinates = {
+            beijing: { lng: 116.397428, lat: 39.90923, name: '北京天安门' },
+            shanghai: { lng: 121.473701, lat: 31.230416, name: '上海外滩' },
+            guangzhou: { lng: 113.280637, lat: 23.125178, name: '广州塔' },
+            shenzhen: { lng: 114.057868, lat: 22.543099, name: '深圳平安大厦' },
+            chengdu: { lng: 104.066541, lat: 30.572269, name: '成都天府广场' },
+            hangzhou: { lng: 120.155069, lat: 30.274085, name: '杭州西湖' }
+        };
+
+        // 日志系统
+        function addLog(message, type = 'info') {
+            const logOutput = document.getElementById('logOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logOutput.appendChild(logEntry);
+            logOutput.scrollTop = logOutput.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('logOutput').innerHTML = '<div class="log-entry info">日志已清空</div>';
+        }
+
+        // 服务状态检查
+        async function checkServiceStatus() {
+            addLog('开始检查服务状态...', 'info');
+            
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+                
+                // 更新状态显示
+                updateStatusItem('serviceStatus', '运行中', 'success');
+                updateStatusItem('geoipStatus', data.geoip_enabled ? '已启用' : '未启用', 
+                    data.geoip_enabled ? 'success' : 'warning');
+                updateStatusItem('coordinateStrategy', data.coordinate_strategy, 'success');
+                updateStatusItem('cacheStatus', '正常', 'success');
+                
+                addLog('服务状态检查完成', 'success');
+            } catch (error) {
+                updateStatusItem('serviceStatus', '服务异常', 'error');
+                addLog(`服务状态检查失败: ${error.message}`, 'error');
+            }
+        }
+
+        function updateStatusItem(id, text, type) {
+            const element = document.getElementById(id);
+            element.textContent = text;
+            element.parentElement.className = `status-item ${type}`;
+        }
+
+        // 瓦片坐标计算函数
+        function lngLatToTile(lng, lat, z) {
+            const scale = Math.pow(2, z);
+            const x = Math.floor((lng + 180) / 360 * scale);
+            const latRad = lat * Math.PI / 180;
+            const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * scale);
+            return { x, y, maxValue: scale - 1 };
+        }
+
+        // 瓦片地理边界计算函数
+        function tileToLngLatBounds(x, y, z) {
+            const n = Math.pow(2, z);
+            const west = (x / n) * 360 - 180;
+            const east = ((x + 1) / n) * 360 - 180;
+            
+            const latRadNorth = Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n)));
+            const latRadSouth = Math.atan(Math.sinh(Math.PI * (1 - 2 * (y + 1) / n)));
+            
+            const north = latRadNorth * 180 / Math.PI;
+            const south = latRadSouth * 180 / Math.PI;
+            
+            return { west, east, north, south };
+        }
+
+        // 计算瓦片地理范围和分辨率
+        function calculateTileCoverage(lng, lat, z) {
+            const tile = lngLatToTile(lng, lat, z);
+            const bounds = tileToLngLatBounds(tile.x, tile.y, z);
+            
+            // 计算瓦片大小（米）
+            const R = 6378137; // 地球半径（米）
+            const tileSize = 256; // 瓦片像素大小
+            const initialResolution = 2 * Math.PI * R / tileSize;
+            const resolution = initialResolution / Math.pow(2, z);
+            const tileSizeMeters = tileSize * resolution;
+            
+            // 计算对角线距离
+            const latCenter = (bounds.north + bounds.south) / 2;
+            const lngCenter = (bounds.west + bounds.east) / 2;
+            
+            // 使用Haversine公式计算距离
+            function haversineDistance(lat1, lon1, lat2, lon2) {
+                const R = 6371000; // 地球半径（米）
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLon = (lon2 - lon1) * Math.PI / 180;
+                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                         Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                         Math.sin(dLon/2) * Math.sin(dLon/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                return R * c;
+            }
+            
+            const width = haversineDistance(latCenter, bounds.west, latCenter, bounds.east);
+            const height = haversineDistance(bounds.south, lngCenter, bounds.north, lngCenter);
+            const area = width * height;
+            
+            return {
+                tile: tile,
+                bounds: bounds,
+                resolution: resolution,
+                tileSizeMeters: tileSizeMeters,
+                width: width,
+                height: height,
+                area: area,
+                areaHa: area / 10000 // 转换为公顷
+            };
+        }
+
+        // 坐标系转换函数（简化版）
+        function wgs84ToGcj02(lng, lat) {
+            // 简化的坐标转换算法
+            if (outOfChina(lng, lat)) {
+                return [lng, lat];
+            }
+            
+            let dLat = transformLat(lng - 105.0, lat - 35.0);
+            let dLng = transformLng(lng - 105.0, lat - 35.0);
+            let radLat = lat / 180.0 * Math.PI;
+            let magic = Math.sin(radLat);
+            let ee = 0.006693421622965943;
+            magic = 1 - ee * magic * magic;
+            let sqrtMagic = Math.sqrt(magic);
+            dLat = (dLat * 180.0) / ((6378245.0 * (1 - ee)) / (magic * sqrtMagic) * Math.PI);
+            dLng = (dLng * 180.0) / (6378245.0 / sqrtMagic * Math.cos(radLat) * Math.PI);
+            
+            return [lng + dLng, lat + dLat];
+        }
+
+        function gcj02ToWgs84(lng, lat) {
+            if (outOfChina(lng, lat)) {
+                return [lng, lat];
+            }
+            
+            // 简化的反向转换
+            let dLat = transformLat(lng - 105.0, lat - 35.0);
+            let dLng = transformLng(lng - 105.0, lat - 35.0);
+            let radLat = lat / 180.0 * Math.PI;
+            let magic = Math.sin(radLat);
+            let ee = 0.006693421622965943;
+            magic = 1 - ee * magic * magic;
+            let sqrtMagic = Math.sqrt(magic);
+            dLat = (dLat * 180.0) / ((6378245.0 * (1 - ee)) / (magic * sqrtMagic) * Math.PI);
+            dLng = (dLng * 180.0) / (6378245.0 / sqrtMagic * Math.cos(radLat) * Math.PI);
+            
+            let mgLat = lat + dLat;
+            let mgLng = lng + dLng;
+            
+            return [lng * 2 - mgLng, lat * 2 - mgLat];
+        }
+
+        function outOfChina(lng, lat) {
+            return !(lng > 73.66 && lng < 135.05 && lat > 3.86 && lat < 53.55);
+        }
+
+        function transformLat(lng, lat) {
+            let ret = -100.0 + 2.0 * lng + 3.0 * lat + 0.2 * lat * lat + 
+                     0.1 * lng * lat + 0.2 * Math.sqrt(Math.abs(lng));
+            ret += (20.0 * Math.sin(6.0 * lng * Math.PI) + 20.0 * Math.sin(2.0 * lng * Math.PI)) * 2.0 / 3.0;
+            ret += (20.0 * Math.sin(lat * Math.PI) + 40.0 * Math.sin(lat / 3.0 * Math.PI)) * 2.0 / 3.0;
+            ret += (160.0 * Math.sin(lat / 12.0 * Math.PI) + 320 * Math.sin(lat * Math.PI / 30.0)) * 2.0 / 3.0;
+            return ret;
+        }
+
+        function transformLng(lng, lat) {
+            let ret = 300.0 + lng + 2.0 * lat + 0.1 * lng * lng + 
+                     0.1 * lng * lat + 0.1 * Math.sqrt(Math.abs(lng));
+            ret += (20.0 * Math.sin(6.0 * lng * Math.PI) + 20.0 * Math.sin(2.0 * lng * Math.PI)) * 2.0 / 3.0;
+            ret += (20.0 * Math.sin(lng * Math.PI) + 40.0 * Math.sin(lng / 3.0 * Math.PI)) * 2.0 / 3.0;
+            ret += (150.0 * Math.sin(lng / 12.0 * Math.PI) + 300.0 * Math.sin(lng * Math.PI / 30.0)) * 2.0 / 3.0;
+            return ret;
+        }
+
+        // 基础瓦片测试
+        async function testBaseTile() {
+            // 使用北京天安门坐标作为默认值
+            const defaultLng = 116.397428;
+            const defaultLat = 39.909230;
+            const z = parseInt(document.getElementById('baseZ').value);
+            
+            const tile = lngLatToTile(defaultLng, defaultLat, z);
+            const x = tile.x;
+            const y = tile.y;
+            
+            addLog(`测试基础瓦片 (北京天安门): X=${x}, Y=${y}, Z=${z}（有效范围：0-${tile.maxValue}）`, 'info');
+            
+            const resultDiv = document.getElementById('baseTileResult');
+            resultDiv.innerHTML = '<div class="loading"></div> 正在加载瓦片...';
+            
+            try {
+                const tileUrl = `/tile?x=${x}&y=${y}&z=${z}`;
+                const response = await fetch(tileUrl);
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const imageUrl = URL.createObjectURL(blob);
+                    
+                    resultDiv.innerHTML = `
+                        <div class="tile-container">
+                            <h4>基础瓦片测试结果</h4>
+                            <div class="tile-image">
+                                <img src="${imageUrl}" alt="瓦片" onload="if(window.URL && window.URL.revokeObjectURL) URL.revokeObjectURL(this.src)">
+                            </div>
+                            <p style="margin-top: 10px; color: #666; font-size: 12px;">
+                                坐标: X=${x}, Y=${y}, Z=${z}
+                            </p>
+                        </div>
+                    `;
+                    // 清理URL对象
+                    setTimeout(() => {
+                        if(window.URL && window.URL.revokeObjectURL) {
+                            URL.revokeObjectURL(imageUrl);
+                        }
+                    }, 100);
+                    addLog('基础瓦片加载成功', 'success');
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="tile-container">
+                        <h4>基础瓦片测试失败</h4>
+                        <div class="tile-image" style="color: #dc3545;">
+                            加载失败: ${error.message}
+                        </div>
+                    </div>
+                `;
+                addLog(`基础瓦片加载失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 城市瓦片测试
+        async function testCityTiles() {
+            const cityKey = document.getElementById('citySelect').value;
+            const z = document.getElementById('cityZ').value;
+            const city = cityCoordinates[cityKey];
+            
+            addLog(`测试${city.name}瓦片，缩放级别: ${z}`, 'info');
+            
+            const resultDiv = document.getElementById('cityTileResult');
+            resultDiv.innerHTML = '<div class="loading"></div> 正在加载城市瓦片...';
+            
+            try {
+                // 计算瓦片坐标
+                const x = Math.floor((city.lng + 180) / 360 * Math.pow(2, z));
+                const y = Math.floor((1 - Math.log(Math.tan(city.lat * Math.PI / 180) + 
+                    1 / Math.cos(city.lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, z));
+                
+                const tileUrl = `/tile?x=${x}&y=${y}&z=${z}`;
+                const response = await fetch(tileUrl);
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const imageUrl = URL.createObjectURL(blob);
+                    
+                    resultDiv.innerHTML = `
+                        <div class="tile-container">
+                            <h4>${city.name}</h4>
+                            <div class="tile-image">
+                                <img src="${imageUrl}" alt="城市瓦片" onload="if(window.URL && window.URL.revokeObjectURL) URL.revokeObjectURL(this.src)">
+                            </div>
+                            <div class="coordinate-display">
+                                <strong>坐标信息：</strong><br>
+                                经纬度: ${city.lng.toFixed(6)}, ${city.lat.toFixed(6)}<br>
+                                瓦片坐标: X=${x}, Y=${y}, Z=${z}
+                            </div>
+                        </div>
+                    `;
+                    // 清理URL对象
+                    setTimeout(() => {
+                        if(window.URL && window.URL.revokeObjectURL) {
+                            URL.revokeObjectURL(imageUrl);
+                        }
+                    }, 100);
+                    addLog(`${city.name}瓦片加载成功`, 'success');
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="tile-container">
+                        <h4>${city.name} - 加载失败</h4>
+                        <div class="tile-image" style="color: #dc3545;">
+                            加载失败: ${error.message}
+                        </div>
+                    </div>
+                `;
+                addLog(`${city.name}瓦片加载失败: ${error.message}`, 'error');
+            }
+        }
+
+        // GCJ02坐标测试
+        async function testGCJ02Tile() {
+            const lng = parseFloat(document.getElementById('gcjLng').value);
+            const lat = parseFloat(document.getElementById('gcjLat').value);
+            const z = document.getElementById('gcjZ').value;
+            
+            // 更新坐标显示
+            document.getElementById('gcjCoordLng').textContent = lng.toFixed(6);
+            document.getElementById('gcjCoordLat').textContent = lat.toFixed(6);
+            
+            addLog(`测试GCJ02坐标瓦片: ${lng.toFixed(6)}, ${lat.toFixed(6)}, Z=${z}`, 'info');
+            
+            const resultDiv = document.getElementById('gcjTileResult');
+            resultDiv.innerHTML = '<div class="loading"></div>';
+            
+            try {
+                const response = await fetch(`/coordinate-tile?lng=${lng}&lat=${lat}&z=${z}&coord_type=gcj02`);
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const imageUrl = URL.createObjectURL(blob);
+                    
+                    resultDiv.innerHTML = `<img src="${imageUrl}" alt="GCJ02瓦片" style="width: 100%; height: 100%; object-fit: cover;" onload="if(window.URL && window.URL.revokeObjectURL) URL.revokeObjectURL(this.src)">`;
+                    // 清理URL对象
+                    setTimeout(() => {
+                        if(window.URL && window.URL.revokeObjectURL) {
+                            URL.revokeObjectURL(imageUrl);
+                        }
+                    }, 100);
+                    addLog('GCJ02瓦片加载成功', 'success');
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div style="color: #dc3545;">加载失败: ${error.message}</div>`;
+                addLog(`GCJ02瓦片加载失败: ${error.message}`, 'error');
+            }
+        }
+
+        // WGS84坐标测试
+        async function testWGS84Tile() {
+            const lng = parseFloat(document.getElementById('wgsLng').value);
+            const lat = parseFloat(document.getElementById('wgsLat').value);
+            const z = document.getElementById('wgsZ').value;
+            
+            // 更新坐标显示
+            document.getElementById('wgsCoordLng').textContent = lng.toFixed(6);
+            document.getElementById('wgsCoordLat').textContent = lat.toFixed(6);
+            
+            addLog(`测试WGS84坐标瓦片: ${lng.toFixed(6)}, ${lat.toFixed(6)}, Z=${z}`, 'info');
+            
+            const resultDiv = document.getElementById('wgsTileResult');
+            resultDiv.innerHTML = '<div class="loading"></div>';
+            
+            try {
+                const response = await fetch(`/coordinate-tile?lng=${lng}&lat=${lat}&z=${z}&coord_type=wgs84`);
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const imageUrl = URL.createObjectURL(blob);
+                    
+                    resultDiv.innerHTML = `<img src="${imageUrl}" alt="WGS84瓦片" style="width: 100%; height: 100%; object-fit: cover;" onload="if(window.URL && window.URL.revokeObjectURL) URL.revokeObjectURL(this.src)">`;
+                    // 清理URL对象
+                    setTimeout(() => {
+                        if(window.URL && window.URL.revokeObjectURL) {
+                            URL.revokeObjectURL(imageUrl);
+                        }
+                    }, 100);
+                    addLog('WGS84瓦片加载成功', 'success');
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div style="color: #dc3545;">加载失败: ${error.message}</div>`;
+                addLog(`WGS84瓦片加载失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 坐标纠偏验证
+        async function verifyCoordinate() {
+            const lng = parseFloat(document.getElementById('verifyLng').value);
+            const lat = parseFloat(document.getElementById('verifyLat').value);
+            const z = document.getElementById('verifyZ').value;
+            
+            addLog(`开始坐标纠偏验证: ${lng.toFixed(6)}, ${lat.toFixed(6)}`, 'info');
+            
+            const resultDiv = document.getElementById('verifyResult');
+            resultDiv.innerHTML = '<div class="loading"></div> 正在验证坐标纠偏...';
+            
+            try {
+                // 获取直接瓦片（不转换）
+                const directResponse = await fetch(`/coordinate-tile?lng=${lng}&lat=${lat}&z=${z}&coord_type=gcj02`);
+                const convertedResponse = await fetch(`/coordinate-tile?lng=${lng}&lat=${lat}&z=${z}&coord_type=wgs84`);
+                
+                if (directResponse.ok && convertedResponse.ok) {
+                    const directBlob = await directResponse.blob();
+                    const convertedBlob = await convertedResponse.blob();
+                    
+                    const directUrl = URL.createObjectURL(directBlob);
+                    const convertedUrl = URL.createObjectURL(convertedBlob);
+                    
+                    resultDiv.innerHTML = `
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div class="tile-container">
+                                <h4>直接GCJ02坐标</h4>
+                                <div class="tile-image">
+                                    <img src="${directUrl}" alt="直接坐标" onload="if(window.URL && window.URL.revokeObjectURL) URL.revokeObjectURL(this.src)">
+                                </div>
+                            </div>
+                            <div class="tile-container">
+                                <h4>WGS84转GCJ02坐标</h4>
+                                <div class="tile-image">
+                                    <img src="${convertedUrl}" alt="转换坐标" onload="if(window.URL && window.URL.revokeObjectURL) URL.revokeObjectURL(this.src)">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="coordinate-display" style="margin-top: 15px;">
+                            <strong>验证结果：</strong><br>
+                            原始坐标: ${lng.toFixed(6)}, ${lat.toFixed(6)}<br>
+                            缩放级别: ${z}<br>
+                            左侧为直接GCJ02坐标瓦片，右侧为WGS84坐标转换后的GCJ02瓦片
+                        </div>
+                    `;
+                    addLog('坐标纠偏验证完成', 'success');
+                    // 清理URL对象
+                    setTimeout(() => {
+                        if(window.URL && window.URL.revokeObjectURL) {
+                            URL.revokeObjectURL(directUrl);
+                            URL.revokeObjectURL(convertedUrl);
+                        }
+                    }, 100);
+                } else {
+                    throw new Error('瓦片获取失败');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div style="color: #dc3545; text-align: center; padding: 20px;">
+                        坐标纠偏验证失败: ${error.message}
+                    </div>
+                `;
+                addLog(`坐标纠偏验证失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 瓦片地理范围分析
+        function analyzeTileCoverage() {
+            const lng = parseFloat(document.getElementById('analysisLng').value);
+            const lat = parseFloat(document.getElementById('analysisLat').value);
+            const z = parseInt(document.getElementById('analysisZ').value);
+            
+            addLog(`分析瓦片覆盖范围: ${lng.toFixed(6)}, ${lat.toFixed(6)}, Z=${z}`, 'info');
+            
+            const coverage = calculateTileCoverage(lng, lat, z);
+            
+            // 计算坐标转换后的偏移
+            const [gcjLng, gcjLat] = wgs84ToGcj02(lng, lat);
+            const offsetLng = Math.abs(gcjLng - lng);
+            const offsetLat = Math.abs(gcjLat - lat);
+            
+            // 计算偏移距离（米）
+            const offsetDistance = Math.sqrt(
+                Math.pow(offsetLng * 111320 * Math.cos(lat * Math.PI / 180), 2) +
+                Math.pow(offsetLat * 110574, 2)
+            );
+            
+            const resultDiv = document.getElementById('coverageResult');
+            resultDiv.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <h4>瓦片信息</h4>
+                        <div class="coordinate-display">
+                            <strong>瓦片坐标：</strong><br>
+                            X: ${coverage.tile.x}, Y: ${coverage.tile.y}<br>
+                            缩放级别: ${z}<br>
+                            总瓦片数: ${Math.pow(2, z) * Math.pow(2, z)}
+                        </div>
+                    </div>
+                    <div>
+                        <h4>地理范围</h4>
+                        <div class="coordinate-display">
+                            <strong>经纬度边界：</strong><br>
+                            西: ${coverage.bounds.west.toFixed(6)}°<br>
+                            东: ${coverage.bounds.east.toFixed(6)}°<br>
+                            南: ${coverage.bounds.south.toFixed(6)}°<br>
+                            北: ${coverage.bounds.north.toFixed(6)}°
+                        </div>
+                    </div>
+                    <div>
+                        <h4>尺寸信息</h4>
+                        <div class="coordinate-display">
+                            <strong>实际尺寸：</strong><br>
+                            宽度: ${coverage.width.toFixed(1)} 米<br>
+                            高度: ${coverage.height.toFixed(1)} 米<br>
+                            面积: ${coverage.areaHa.toFixed(2)} 公顷<br>
+                            分辨率: ${coverage.resolution.toFixed(2)} 米/像素
+                        </div>
+                    </div>
+                    <div>
+                        <h4>坐标偏移分析</h4>
+                        <div class="coordinate-display">
+                            <strong>WGS84→GCJ02偏移：</strong><br>
+                            经度偏移: ${offsetLng.toFixed(6)}°<br>
+                            纬度偏移: ${offsetLat.toFixed(6)}°<br>
+                            偏移距离: ${offsetDistance.toFixed(1)} 米<br>
+                            相对瓦片大小: ${(offsetDistance / coverage.width * 100).toFixed(1)}%
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px;">
+                    <strong>分析结果：</strong><br>
+                    ${offsetDistance < coverage.width * 0.5 ? 
+                        '坐标偏移小于瓦片尺寸的一半，在当前缩放级别下WGS84和GCJ02坐标可能落在同一瓦片内。建议使用更高缩放级别(17-18)来观察差异。' : 
+                        '坐标偏移明显，在当前缩放级别下可以观察到WGS84和GCJ02坐标的差异。'}
+                </div>
+            `;
+            
+            addLog('瓦片覆盖范围分析完成', 'success');
+        }
+
+        // 高缩放级别测试
+        async function testHighZoom(zoom) {
+            const lng = parseFloat(document.getElementById(`highZ${zoom}Lng`).value);
+            const lat = 39.90923; // 使用固定纬度
+            
+            addLog(`测试高缩放级别Z${zoom}: ${lng.toFixed(6)}, ${lat.toFixed(6)}`, 'info');
+            
+            const resultDiv = document.getElementById(`highZ${zoom}Result`);
+            resultDiv.innerHTML = '<div class="loading"></div> 正在测试高缩放级别...';
+            
+            try {
+                // 计算GCJ02和WGS84坐标
+                const [gcjLng, gcjLat] = wgs84ToGcj02(lng, lat);
+                
+                // 计算瓦片坐标
+                const gcjTile = lngLatToTile(gcjLng, gcjLat, zoom);
+                const wgsTile = lngLatToTile(lng, lat, zoom);
+                
+                // 获取瓦片
+                const gcjResponse = await fetch(`/coordinate-tile?lng=${gcjLng}&lat=${gcjLat}&z=${zoom}&coord_type=gcj02`);
+                const wgsResponse = await fetch(`/coordinate-tile?lng=${lng}&lat=${lat}&z=${zoom}&coord_type=wgs84`);
+                
+                if (gcjResponse.ok && wgsResponse.ok) {
+                    const gcjBlob = await gcjResponse.blob();
+                    const wgsBlob = await wgsResponse.blob();
+                    
+                    const gcjUrl = URL.createObjectURL(gcjBlob);
+                    const wgsUrl = URL.createObjectURL(wgsBlob);
+                    
+                    resultDiv.innerHTML = `
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div class="tile-container">
+                                <h4>GCJ02坐标瓦片</h4>
+                                <div class="tile-image" style="height: 150px;">
+                                    <img src="${gcjUrl}" alt="GCJ02" style="width: 100%; height: 100%; object-fit: cover;">
+                                </div>
+                                <div style="font-size: 11px; margin-top: 5px;">
+                                    坐标: ${gcjLng.toFixed(6)}, ${gcjLat.toFixed(6)}<br>
+                                    瓦片: (${gcjTile.x}, ${gcjTile.y})
+                                </div>
+                            </div>
+                            <div class="tile-container">
+                                <h4>WGS84坐标瓦片</h4>
+                                <div class="tile-image" style="height: 150px;">
+                                    <img src="${wgsUrl}" alt="WGS84" style="width: 100%; height: 100%; object-fit: cover;">
+                                </div>
+                                <div style="font-size: 11px; margin-top: 5px;">
+                                    坐标: ${lng.toFixed(6)}, ${lat.toFixed(6)}<br>
+                                    瓦片: (${wgsTile.x}, ${wgsTile.y})
+                                </div>
+                            </div>
+                        </div>
+                        <div class="coordinate-display" style="margin-top: 10px; font-size: 12px;">
+                            <strong>差异分析：</strong><br>
+                            瓦片差异: ${gcjTile.x !== wgsTile.x || gcjTile.y !== wgsTile.y ? '不同瓦片' : '相同瓦片'}<br>
+                            坐标偏移: ${(Math.abs(gcjLng - lng) * 111320).toFixed(1)} 米
+                        </div>
+                    `;
+                    
+                    // 清理URL对象
+                    setTimeout(() => {
+                        if(window.URL && window.URL.revokeObjectURL) {
+                            URL.revokeObjectURL(gcjUrl);
+                            URL.revokeObjectURL(wgsUrl);
+                        }
+                    }, 100);
+                    
+                    addLog(`高缩放级别Z${zoom}测试完成`, 'success');
+                } else {
+                    throw new Error('瓦片获取失败');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div style="color: #dc3545; text-align: center;">测试失败: ${error.message}</div>`;
+                addLog(`高缩放级别Z${zoom}测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 坐标系转换可视化
+        function visualizeCoordinateTransform() {
+            const lng = parseFloat(document.getElementById('visLng').value);
+            const lat = parseFloat(document.getElementById('visLat').value);
+            const coordType = document.getElementById('visCoordType').value;
+            
+            addLog(`可视化坐标转换: ${lng.toFixed(6)}, ${lat.toFixed(6)}, 类型: ${coordType}`, 'info');
+            
+            let gcj02Coords, wgs84Coords;
+            
+            if (coordType === 'gcj02') {
+                gcj02Coords = [lng, lat];
+                wgs84Coords = gcj02ToWgs84(lng, lat);
+            } else {
+                wgs84Coords = [lng, lat];
+                gcj02Coords = wgs84ToGcj02(lng, lat);
+            }
+            
+            // 计算偏移量
+            const offsetLng = Math.abs(gcj02Coords[0] - wgs84Coords[0]);
+            const offsetLat = Math.abs(gcj02Coords[1] - wgs84Coords[1]);
+            
+            // 计算偏移距离
+            const offsetDistance = Math.sqrt(
+                Math.pow(offsetLng * 111320 * Math.cos(lat * Math.PI / 180), 2) +
+                Math.pow(offsetLat * 110574, 2)
+            );
+            
+            const resultDiv = document.getElementById('visualizationResult');
+            resultDiv.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <h4>WGS84坐标（GPS原始坐标）</h4>
+                        <div class="coordinate-display">
+                            <strong>经度：</strong> ${wgs84Coords[0].toFixed(6)}°<br>
+                            <strong>纬度：</strong> ${wgs84Coords[1].toFixed(6)}°<br>
+                            <strong>十进制度分：</strong> ${decimalToDMS(wgs84Coords[0])}, ${decimalToDMS(wgs84Coords[1])}
+                        </div>
+                    </div>
+                    <div>
+                        <h4>GCJ02坐标（火星坐标系）</h4>
+                        <div class="coordinate-display">
+                            <strong>经度：</strong> ${gcj02Coords[0].toFixed(6)}°<br>
+                            <strong>纬度：</strong> ${gcj02Coords[1].toFixed(6)}°<br>
+                            <strong>十进制度分：</strong> ${decimalToDMS(gcj02Coords[0])}, ${decimalToDMS(gcj02Coords[1])}
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; padding: 15px; background: #e8f4fd; border-radius: 6px;">
+                    <h4>偏移量分析</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 10px;">
+                        <div>
+                            <strong>经度偏移：</strong><br>
+                            ${offsetLng.toFixed(6)}°<br>
+                            ${(offsetLng * 111320 * Math.cos(lat * Math.PI / 180)).toFixed(1)} 米
+                        </div>
+                        <div>
+                            <strong>纬度偏移：</strong><br>
+                            ${offsetLat.toFixed(6)}°<br>
+                            ${(offsetLat * 110574).toFixed(1)} 米
+                        </div>
+                        <div>
+                            <strong>总偏移距离：</strong><br>
+                            ${offsetDistance.toFixed(1)} 米<br>
+                            ${(offsetDistance / 1000).toFixed(3)} 公里
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 6px;">
+                    <strong>转换说明：</strong><br>
+                    ${coordType === 'gcj02' ? 
+                        '您输入的是GCJ02坐标，系统已将其转换为WGS84坐标。GCJ02是中国使用的加密坐标系，相对于WGS84有一定的偏移。' :
+                        '您输入的是WGS84坐标，系统已将其转换为GCJ02坐标。在中国大陆使用地图服务时，需要将WGS84坐标转换为GCJ02坐标。'}
+                </div>
+            `;
+            
+            addLog('坐标转换可视化完成', 'success');
+        }
+
+        // 十进制度转换为度分秒格式
+        function decimalToDMS(decimal) {
+            const degrees = Math.floor(decimal);
+            const minutesNotTruncated = (decimal - degrees) * 60;
+            const minutes = Math.floor(minutesNotTruncated);
+            const seconds = (minutesNotTruncated - minutes) * 60;
+            
+            return `${degrees}°${minutes}'${seconds.toFixed(2)}"`;
+        }
+
+        // 页面加载完成后初始化
+        window.addEventListener('load', function() {
+            addLog('页面加载完成，开始初始化...', 'info');
+            checkServiceStatus();
+            // 延迟初始化地图，确保DOM完全加载
+            setTimeout(initMainMap, 500);
+            addLog('系统初始化完成，可以进行测试', 'success');
+        });
+    </script>
+</body>
+</html>
