@@ -16,16 +16,16 @@
 
 ### 在Linux系统直接运行
 
-推荐使用`.env`文件来管理环境变量，这样更安全且灵活。
+推荐使用配置文件来管理环境变量，这样更安全且灵活。
 
 ```bash
-# (可选) 创建并编辑.env文件
-# echo "GEOIP_ENABLED=false" > .env
+# 配置文件已包含在 config/settings.conf
+# 可根据需要修改配置参数
 
 # 安装依赖
 pip install -r requirements.txt
 
-# 运行应用 (会自动加载.env文件)
+# 运行应用 (会自动加载配置文件)
 python app.py
 ```
 
@@ -50,7 +50,7 @@ cd amap_proxy
 # Dockerfile会自动复制以下文件：
 # - app.py (主应用)
 # - test_tile.html (高级测试页面)
-# - .env (环境变量配置)
+# - config/settings.conf (环境变量配置)
 # - config/ (例外规则配置)
 docker build -t amap_proxy:latest .
 
@@ -143,7 +143,7 @@ curl "http://localhost:8280/coordinate-tile?lng=116.3974&lat=39.9093&z=12&style=
 启用缓存后，瓦片按以下分层结构存储，避免不同图层间的缓存冲突：
 
 ```
-/tmp/cache/
+./amap-cache/
 ├── {z}/                    # 缩放级别
 │   └── {x//100}/          # X坐标分片（每100个瓦片一个目录）
 │       └── style_{style}/ # 图层样式目录（style_6, style_7, style_8, style_9）
@@ -182,11 +182,11 @@ openstreetmap: openstreetmap.org, osm.org
 
 ### GeoIP数据库
 
-GeoIP功能通过环境变量控制，需要在.env文件中进行配置：
+GeoIP功能通过配置文件控制，在 `config/settings.conf` 中进行配置：
 
-#### 环境变量配置
+#### 配置文件设置
 
-在项目根目录的`.env`文件中设置：
+配置文件位于 `config/settings.conf`：
 
 ```bash
 # 启用GeoIP功能（需要有效的GeoLite2-City.mmdb文件）
@@ -232,7 +232,7 @@ Docker构建时会自动复制以下关键文件到镜像中：
 
 - **`app.py`** - 主应用程序
 - **`test_tile.html`** - 高级测试页面
-- **`.env`** - 环境变量配置（包含GEOIP_ENABLED=false等设置）
+- **`config/settings.conf`** - 环境变量配置（包含GEOIP_ENABLED=false等设置）
 - **`config/`** - 例外规则配置目录
 
 > 💡 **提示**：镜像中已包含完整的测试环境，可以直接访问 `/test_tile.html` 进行高级功能测试。
@@ -243,8 +243,8 @@ Docker构建时会自动复制以下关键文件到镜像中：
 amap_proxy/
 ├── app.py                 # 主应用文件
 ├── requirements.txt        # Python依赖
-├── .env                   # 环境变量配置
 ├── config/
+│   ├── settings.conf       # 环境变量配置
 │   └── exception_rules    # 例外规则配置
 ├── docker-compose.yaml    # Docker Compose配置
 ├── Dockerfile            # Docker镜像构建文件
