@@ -126,7 +126,10 @@ curl "http://localhost:8280/tile?z=10&x=500&y=300&style=6"
 # 根据经纬度获取瓦片
 curl "http://localhost:8280/coordinate-tile?lng=116.3974&lat=39.9093&z=12&style=8"
 ```
+### homeassistant、traccar等使用API
 
+- 阅读 [INTEGRATION_GUIDE.md]
+- 参考实例 [高德地图瓦片图层替换原生HA地图](https://github.com/lxg20082008/amap_ha)
 ## 配置说明
 
 ### 环境变量
