@@ -21,7 +21,15 @@
 ```bash
 # 配置文件已包含在 config/settings.conf
 # 可根据需要修改配置参数
+# 缓存配置
+CACHE_ENABLED=true
+CACHE_DIR=./amap-cache
 
+# GeoIP 配置
+GEOIP_ENABLED=false
+```
+
+```bash
 # 安装依赖
 pip install -r requirements.txt
 
